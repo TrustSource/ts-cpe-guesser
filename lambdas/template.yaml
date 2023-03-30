@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description:
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Runtime: python3.8
+    Timeout: 3
+    VpcConfig:
+      SecurityGroupIds:
+        - sg-0dffd8b77dcacd746
+      SubnetIds:
+        - subnet-09899225e8d37ecb8
+        - subnet-0a7d6003d025d4292
+  Api:
+    Name: "ts-cpe-guesser"
+
+Resources:
+
+# cpeFromText
+  cpeFromText:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 15
+      CodeUri: ./
+      Handler: cpe_extraction.lambda_handler
+      Runtime: python3.8
+      FunctionName: cpeFromText
+      Layers: [ "arn:aws:lambda:eu-central-1:118285606803:layer:openai-libs:3" ]
+      Events:
+        Gateway:
+          Type: Api
+          Properties:
+            Path: /text_comprehension/cpe_extraction
+            Method: GET
+
+
+# updateCveNlp
+  updateCveNlp:
+    Type: AWS::Serverless::Function
+    Properties:
+      VersionDescription:
+      Description: 'This function populates and updates the collection "cve_nlp"
+                    in "vulnDB". CVEs in "cve_nlp" are recent and have only 
+                    unofficial CPE assignments generated with NLP. 
+                    Event parameters: ["action","hours"].'
+      CodeUri: ./
+      Handler: update_cve_nlp.lambda_handler
+      Runtime: python3.8
+      FunctionName: updateCveNlp
+      Timeout: 600
+      MemorySize: 512
+      Layers: ["arn:aws:lambda:eu-central-1:118285606803:layer:openai-libs:3",
+               "arn:aws:lambda:eu-central-1:118285606803:layer:boto-libs:1",
+               "arn:aws:lambda:eu-central-1:118285606803:layer:pymongo-libs:1"]
+      Environment:
+        Variables:
+          CVE_NLP_UPDATES_TOPIC: !Ref cveNlpUpdatesTopic
+          ACCEPTABLE_HOURS: 2
+          LOGLEVEL: warn
+          ENV: aws
+      Events:
+        gateway:
+          Type: Api
+          Properties:
+            Path: /update_cve_nlp
+            Method: GET
+      Policies:
+        - arn:aws:iam::118285606803:policy/GrantAccess2MongoSecrets
+        - SNSPublishMessagePolicy:
+              TopicName: !GetAtt cveNlpUpdatesTopic.TopicName
+
+  cveNlpUpdatesTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: "cveNlpUpdatesTopic"
+      #Subscription:
+       # - Endpoint: !GetAtt notifyUpdatesQueue.Arn
+           #Protocol: "sqs"
+       # - #Endpoint: !GetAtt updateComponentsQueue.Arn
+           #Protocol: "sqs"
+
+  updateCveNlpSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Runs every 2h, starting at 00:15AM UTC to trigger the import of recent NVD Data."
+      ScheduleExpression: "cron(15 0/2 * * ? *)"
+      State: "ENABLED"
+      Targets:
+        - Arn: !GetAtt updateCveNlp.Arn
+          Id: "updateCveNlpTarget"
+          Input: '{"action":"update"}'
+
+  updateCveNlpSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref updateCveNlp
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt updateCveNlpSchedule.Arn
+
+
+# fetchNlpCves
+  fetchNlpAssignedCves:
+    Type: AWS::Serverless::Function
+    Properties:
+      VersionDescription:
+      Description: 'This function formats CVEs with NLP generated CPE assignments from
+                    vulnDB.cve_nlp into a JSON file and returns them in a standard http response.'
+      CodeUri: ./
+      Handler: fetch_nlp_cves.lambda_handler
+      Runtime: python3.8
+      FunctionName: fetchNlpAssignedCves
+      Timeout: 600
+      MemorySize: 512
+      Environment:
+        Variables:
+          ENV: aws
+      Events:
+        gateway:
+          Type: Api
+          Properties:
+            Path: /fetch_nlp_cves
+            Method: GET
+      Layers: ["arn:aws:lambda:eu-central-1:118285606803:layer:pymongo-libs:1"]
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/tsvlakeLambdaExecRole
+      Policies:
+        - arn:aws:iam::118285606803:policy/GrantAccess2MongoSecrets
