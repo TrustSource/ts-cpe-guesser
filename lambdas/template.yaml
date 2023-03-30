@@ -42,8 +42,8 @@ Resources:
     Properties:
       VersionDescription:
       Description: 'This function populates and updates the collection "cve_nlp"
-                    in "vulnDB". CVEs in "cve_nlp" are recent and have only 
-                    unofficial CPE assignments generated with NLP. 
+                    in "vulnDB". CVEs in "cve_nlp" are recent and have only
+                    unofficial CPE assignments generated with NLP.
                     Event parameters: ["action","hours"].'
       CodeUri: ./
       Handler: update_cve_nlp.lambda_handler
