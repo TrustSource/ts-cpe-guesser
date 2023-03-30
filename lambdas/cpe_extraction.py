@@ -13,7 +13,7 @@ A CPE string is artificially reconstructed from the data.
 GPT-3 is accessed through an API-Call to openAI.
 """
 
-from src import nlp
+import nlp
 import json
 
 CHAR_LIMIT_MSG = "Description unusually long. \
