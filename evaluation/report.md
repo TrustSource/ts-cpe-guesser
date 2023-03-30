@@ -12,7 +12,7 @@ The CVEs in these databases contain, among other kinds of information,
 
 TrustSource uses these CPEs to automatically assign vulnerabilities to software components. 
 Unfortunately, this approach is not always viable. When a vulnerability has been registered just recently and 
-is still under investigation, the list of CPEs is usually not available yet, whereas a description already is.
+is still under investigation, the list of CPEs usually follows the announcement within a few days, whereas a description is available right away.
 
 Hence, we considered training a language model (GPT-3) to extract the CPE fields
 `vendor`, `product`, `version` and version ranges like `versionStartIncluding` from the natural language descriptions of
@@ -23,7 +23,7 @@ create official CPE assignments for the CVE in question.
 ## Approach
 
 ### Data
-We used CVE data from the NVD-2021-CVE catalog, accessed in July 2022, for fine-tuning a GPT-3 model to perform _Named Entity Extraction_ on CVE descriptions. The entities to be extracted where `vendor`, `product`, `version` and the four version ranges
+We used CVE data from the NVD-2021-CVE catalog, accessed in July 2022, for fine-tuning a GPT-3 model to perform _Named Entity Extraction_ on CVE descriptions. The entities to be extracted were `vendor`, `product`, `version` and the four version ranges
 `version[Start|End][In|Ex]cluding`. Have a look at the __positive examples__ or __negative examples__ below for
 showcases of _named entity extraction_.
 
