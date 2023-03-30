@@ -1,0 +1,5 @@
+# openai - wrapped in openai-libs layer on aws.
+# botocore - wrappen in boto-libs layer
+# boto3 - wrapped in boto-libs layer
+# pymongo - wrapped in pymongo-libs layer
+ts-vulndb

@@ -1,0 +1,14 @@
+{
+	"@type": "MessageCard",
+	"@context": "https://schema.org/extensions",
+	"summary": "A CPE was generated using NLP",
+	"themeColor": "5D3FD3",
+	"title": "CPEs were generated via NLP",
+	"sections": [
+		{
+			"activityTitle": "**updateCveNlp Lambda**",
+			"activitySubtitle": "Date",
+			"activityImage": "https://www.trustsource.io/wp-content/uploads/2018/05/Logo_200x100.png"
+		}
+	]
+}
