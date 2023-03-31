@@ -118,7 +118,7 @@ def broadcast_to_teams(nlp_cves: {}, multi_message: bool = False):
         for cve in nlp_cves:
             broadcast_to_teams(cve)
 
-    teams_webhook = open(pathlib.Path("./teams_webhook.txt")).read()
+    teams_webhook = get_credentials("dev/cpe-guesser/teams-webhook")
     card_template = json.load(open(pathlib.Path("./teams_card_template.json"))).copy()
 
     card_template["title"] = f"Generated CPE using NLP"

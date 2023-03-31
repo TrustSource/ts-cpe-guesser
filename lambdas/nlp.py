@@ -24,7 +24,7 @@ from typing import Union
 import openai
 import re
 import time
-
+import utils
 
 def generate_cpe_match(description: Union[str, list], method: str = "openai",
                        verbose: bool = True) -> Union[dict, list]:
@@ -128,7 +128,7 @@ def openai_parse(description: str, verbose: bool = True) -> dict:
 
             Empty dict ({}), when API Call or formatting failed
     """
-    openai.api_key = "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"  # Hard-coded for now.
+    openai.api_key = utils.get_credentials("dev/cpe-guesser/openai-apikey")  # Hard-coded for now.
     model = "curie:ft-eacg:nvd21-665ner-2022-07-19-15-01-06"  # Hard-coded for now.
     indicator_string = "\n->"
     prompt = description + indicator_string
