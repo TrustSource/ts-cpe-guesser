@@ -8,18 +8,16 @@ One such source is the National Institute of Standards and Technology. It hosts 
 
 The CVEs in these databases contain, among other kinds of information, 
 1. A natural language description of the vulnerability in question
-2. A list of [CPEs](https://en.wikipedia.org/wiki/Common_Platform_Enumeration)* which specify  the afflicted software configurations.
+2. A list of [CPEs](https://en.wikipedia.org/wiki/Common_Platform_Enumeration) which specify  the afflicted software configurations.
 
 TrustSource uses these CPEs to automatically assign vulnerabilities to software components. 
 Unfortunately, this approach is not always viable. When a vulnerability has been registered just recently and 
-is still under investigation, the list of CPEs usually follows the announcement within a few days, whereas a description is available right away.
+is still under investigation, the list of CPEs usually follows the announcement after a few days, whereas a description is available right away.
 
 Hence, we considered training a language model (GPT-3) to extract the CPE fields
 `vendor`, `product`, `version` and version ranges like `versionStartIncluding` from the natural language descriptions of
 new CVEs to be as quick as possible about warning our customers when a
-component they use might be subjected to a vulnerability. Quicker than the time needed to 
-create official CPE assignments for the CVE in question. 
-
+component they use might be subjected to a vulnerability.
 ## Approach
 
 ### Data
@@ -33,7 +31,7 @@ We only included training data where
 * a vendor/product configuration, such as google/chrome, is not already part of the training set
 * vendor, product & versions are all mentioned explicitly in the description
 
-This left us with 665 examples of descriptions with matched CPEs. 
+This left us with 665 examples of descriptions with matched CPEs from the NVD-2021-CVE catalog . 
 
 ### Model Training
 We followed the openAI API guide to bring the training set into the correct format
@@ -65,28 +63,32 @@ Eliminating special characters, at least in half of the cases for all entities, 
 We ran the evaluation again, only including CVEs, where the entities of interest were
 explicitly mentioned in the descriptions. Since, technically, NER should not be possible when this condition isn't fulfilled.
 
-#### CVEs with product explicitly appearing in description. (1549 / 3048 CVEs)
-|Entity                |Accuracy (no special characters)|                              
-|----------------      |--------
-|product               | 0.66
-
-#### CVEs with  vendor explicitly appearing in description. (2182 / 3048CVEs)
-|Entity                | Accuracy (no special characters |                              
-|----------------      |---------------------------------
-|vendor| 0.76                            
-
-#### CVEs with version explicitly appearin in description. (2671/ 3048 CVEs)
-|Entity                | Accuracy (no special characters |                              
-|----------------      |---------------------------------
-|vendor| 0.86                            
+#### Accuracies depending on whether entities appear in the description
+| Entity  | Accuracy (no special characters) | in description| count (out of 3048) |
+|---------|----------------------------------|--------       |---------------------|
+| product | 0.66                             | yes           | 2182                |
+| product | 0.12                             | no            | 866                 |
+| vendor  | 0.66                             | yes           | 1549                |
+| vendor  | 0.24                             | no            | 1499                |
+| version | 0.66                             | yes           | 2671                |
+| version | 0.09                             | no            | 377                 |
 
 
-As expected, the model performance significantly better, when product (0.66 vs 0.5), vendor (0.76 vs 0.5) and version (0.86 vs 0.68) are explicitly mentioned in the CVE descriptions. 
+
+As expected, the model performs significantly better, when product (0.66 vs 0.12),
+vendor (0.76 vs 0.24) and version (0.86 vs 0.09) are explicitly mentioned in the CVE descriptions. 
+
+
+It is striking that the model was able to correctly identify 24% of vendors even though they did not appear explicitly in the descriptions. 
+The model correctly inferred the vendor in these cases when 
+1. The product is very well known. That would be the case for "chrome" or "android" for both of which the model correctly determined "google" to be the vendor.
+2. In some instances, when the correct vendor name is "<product-name>_project"
+
 
 
 #### Positive Examples
 |Description           |Official | Model |                              
-|----------------      |---------|----------
+|----------------      |---------|----------|
 |Use after free in PDF in Google Chrome prior to 105.0.5195.125 allowed a remote attacker to potentially  exploit heap corruption via a crafted PDF file.        | product : chrome ,  <br> vendor: google <br>  version: * <br> versionEndExcluding: 105.0.5195.125 |product : chrome ,  <br> vendor: google <br>  version: * <br> versionEndExcluding: 105.0.5195.125 
 |mojoPortal v2.7 was discovered to contain a path traversal vulnerability via the "f" parameter at /DesignTools/CssEditor.aspx. This vulnerability allows authenticated attackers to read arbitrary files in the system.        | product : mojoportal,  <br> vendor: mojoportal <br>  version: 2.7.0.0|product : mojo_portal <br> vendor: mojo_portal <br>  version: 2.7* <br> 
 
@@ -100,6 +102,11 @@ As expected, the model performance significantly better, when product (0.66 vs 0
 
 
 ## Conclusion
-Given that the model was trained on surprisingly little training data and the comparatively low-effort training procedure, the model performs reasonably well at extracting vendor, product and version information from CVE descriptions, given that they are explicitly mentioned. 
+Given that the model was trained on surprisingly little training data and the comparatively low-effort training procedure, the model performs reasonably well at extracting vendor, product and version information from CVE descriptions, assuming that the entities are explicitly mentioned. 
 
 If a language model like GPT-3 is to be deployed for the purpose of early vulnerability assignments and alerts, it would greatly benefit from somewhat standardized description scheme, where vendors and products are mentioned explicitly. Furthermore, training another model with more training data could yield improvements as well. 
+
+
+## Try it yourself
+If you want to see different results, modify `run()` in `script.py` to yield the results
+that you would like to see.
