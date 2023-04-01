@@ -1,4 +1,4 @@
-import requests
+#import requests
 import json
 
 FETCH_NLP_CVE_URL = "https://rscyxnhkwg.execute-api.eu-central-1.amazonaws.com/Prod/fetch_nlp_cves"
@@ -36,6 +36,14 @@ class Preprocessing:
         cves_filtered = []
         for cve in cves:
             if Preprocessing.check_entities_in_description(cve, entities):
+                cves_filtered.append(cve)
+        return cves_filtered
+
+    @staticmethod
+    def filter_where_entities_not_in_description(cves: [], entities: []):
+        cves_filtered = []
+        for cve in cves:
+            if not Preprocessing.check_entities_in_description(cve, entities):
                 cves_filtered.append(cve)
         return cves_filtered
 
