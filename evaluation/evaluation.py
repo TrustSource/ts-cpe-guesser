@@ -4,7 +4,7 @@ import data
 def count_matches(cves, comparison):
     """
     This function compares nlp assigned CVE matches with officially assigned CPE matches.
-    Expects that data hsa already been preprocessed and pre-selected.
+    Expects that data has already been preprocessed and pre-selected.
 
     Args:
         cves (list): Each item has dict_keys(['cve_id', 'description', 'cpe_match', 'cpe_match_nlp', 'last_modified'])
